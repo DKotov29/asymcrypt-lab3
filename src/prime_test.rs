@@ -7,12 +7,12 @@ use malachite::num::logic::traits::BitIterable;
 use crate::rand_generator;
 
 pub fn test(number: &Natural) -> bool {
-    match trial_div(&number) {
-        true => {
+    // match trial_div(&number) {
+    //     true => {
             return miller_rabin(&number);
-        }
-        false => { return false; }
-    }
+    //     }
+    //     false => { return false; }
+    // }
 }
 
 pub fn trial_div(num: &Natural) -> bool {
