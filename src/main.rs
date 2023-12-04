@@ -9,19 +9,28 @@ extern crate core;
 
 use std::str::FromStr;
 use std::sync::Mutex;
-use std::time::Instant;
 use rayon::prelude::*;
 use malachite::Natural;
-use malachite::num::arithmetic::traits::{FloorSqrt, Square};
-use malachite::num::basic::traits::One;
+use malachite::num::arithmetic::traits::{ExtendedGcd, FloorSqrt, Pow, Square};
+use malachite::num::basic::traits::{One, Two};
 use malachite::num::logic::traits::BitIterable;
+use rand::Rng;
 
 fn main() {
+    let b = Natural::TWO.pow(2u64);
     let vec = par_generate(4, 2);
     let (p, q) = (
         vec.get(0).unwrap().clone(),
         vec.get(1).unwrap().clone());
     let n = &p*&q;
+    let m = Natural::from(123456u64);
+    let r = Natural::from(rand::thread_rng().gen::<u64>());
+    let x = cryptosystem::format(&m, &n, &r ).unwrap();
+    let (y, c1, c2) = cryptosystem::encrypt(&b, &x, &n);
+    let (is_it_x) = cryptosystem::decrypt(&b,&y,&p,&q,&c1,&n,c2);
+    println!("{x}\n{is_it_x}");
+
+
     // println!("{:?}", cryptosystem::format(&Natural::from(0b111111111u), &Natural::ONE, &Natural::from_owned_limbs_asc(rand_generator::generate(1))));
 }
 fn par_generate(at_once: usize, amount: usize) -> Vec<Natural> {
