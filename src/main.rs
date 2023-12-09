@@ -1,4 +1,5 @@
 #![feature(int_roundings)]
+
 mod cryptosystem;
 mod prime_test;
 mod rand_generator;
@@ -11,34 +12,43 @@ use std::str::FromStr;
 use std::sync::Mutex;
 use rayon::prelude::*;
 use malachite::Natural;
-use malachite::num::arithmetic::traits::{ExtendedGcd, FloorSqrt, Pow, Square};
+use malachite::num::arithmetic::traits::{ExtendedGcd, FloorSqrt, Mod, ModPow, Pow, Square};
 use malachite::num::basic::traits::{One, Two};
 use malachite::num::conversion::traits::FromStringBase;
 use malachite::num::logic::traits::BitIterable;
+use num_bigint::BigUint;
 use rand::{random, Rng};
 
 fn main() {
+
     let b = Natural::TWO.pow(2u64);
-    // let vec = par_generate(4, 2);
+    println!("b: {b:x}");
+    // let vec = par_generate(2, 2);
     let (p, q) = (
         // vec.get(0).unwrap().clone(),
         // vec.get(1).unwrap().clone()
-        Natural::from_string_base(10u8, "56596653542729861995492937782359306906328022911586618389679946595578401780476997818817303845194306612334054692212450849184483786523525689986901572630509890049719171972406774742938379984251943256036320644841243114624857200210046651107855298261725816502012688096715592303666013021915301443948554705915447953847749758045150895092976132564502468609490384056680011895607158209190044371373807285132926418158351710027255178644742882315183009694217183591304493012361763548261928557394965818962355517805032436192820905814742728395942148296768460487126258243143110572580769612248659935275617418754618769369216444146408884759496419666995786175579").unwrap(),
-        Natural::from_string_base(10u8, "63789964463407789677757613808706835625070646632683647164679070271771666214655985109797052357690224530972934384300057494951606365327174826564233935829828455444671111056075399457286933428493298037880224975240724353806727056370819492463089686092976392558836739252725798108983370932200718982172959059781889006684687012209128074703959671266934430079819544478342373677768910174694794303391088910671967313039294232277423719052498872212100211559016454017876022953683919328194372248251204232837260296118464618414597210519097738558902843100598422299268100844519953049892676692621941664475273372207993169386560774501518600038779296219199322483455").unwrap()
-        );
+        Natural::from_string_base(16u8, "f469f1cc2492eeb6c4c845b0253081738e0a4518777caaf115c4eb8e8229957452f795eafe92acffa850859b30e468f81e2a3b8c425a4edda06b3fd59b88354900046dd15284c77f2b0f55d6873632b74f833d23305977e812c197a6df77113cf6b9ad15d1276badf53045b5acf1933b3767ff9e2e640c415ba3e5d38b059b95687a0264975317c2d7a8f5054958ff224298d71361f0123ee0c8a792314652933ccda9afaaed9c9090e1568dcfa91c8f791d0d7bfec8662c338bead6ce0d7804c0771f251905f1752bfb7e5e550d6566adf6ef7cc88b1653a75e87cf9a37d557995e3d180bfbf418c4cb34d4cfe28713e7c31fbc4f589665104d5cfa4ef70622878ff76b1257ea1f").unwrap(),
+        Natural::from_string_base(16u8, "74b8eb2a9c215c9bb6522fdb0c7e802b356fd6b5e563752925b0272596dc31adeceec639a06e49f4e7866cfd2382ecb263eeaeb00391bca77d3ff59382df82db7532ce55b111de6755dc1ca323619e057e0ef69060844f7dc081d41f19000d148723727cf762764502219adb06e41f05d69293b75f6f3f2b32de1debf69c9f06082f3a0e36537e604c1e4cc47cc276afd95574b12b3e99c20eed59cd32192d87be0fa028e07bdde49a0b69c0086e5f05bbafeb928d7377b7061c09b2a1676d996a6ab87c8c7fd2211adc9aae241d3b12959406c3766d945a20ef8fa385b17bec9e34846e92b8f228a1cae378b3f3af663aa0c5a5d8707766c5a823a7c57cb09f6749f872b40eeee7").unwrap()
+    );
 
-    println!("p: {p}\nq: {q}");
-    let n = &p*&q;
+    println!("p: {p:x}\nq: {q:x}");
+    println!("n: {:x}", &p * &q);
+    let n = &p * &q;
     let m = Natural::from(123456u64);
+    println!("m: {m:x}");
     let r = Natural::from(random::<u64>());
-    let x = cryptosystem::format(&m, &n, &r ).unwrap();
+    let x = cryptosystem::format(&m, &n, &r).unwrap();
+    // let x = m;
+    println!("x: {x:x}");
+    //;
     let (y, c1, c2) = cryptosystem::encrypt(&b, &x, &n);
-    let (is_it_x) = cryptosystem::decrypt(&b,&y,&p,&q,&c1,&n, c2);
-    println!("{x}\n{is_it_x}");
-
+    println!("y (encrypted x): {y:x}");
+    let (is_it_x) = cryptosystem::decrypt(&b, &y, &p, &q, &c1, &n, c2);
+    println!("x: {x}\ndecrypted: {is_it_x}");
 
     // println!("{:?}", cryptosystem::format(&Natural::from(0b111111111u), &Natural::ONE, &Natural::from_owned_limbs_asc(rand_generator::generate(1))));
 }
+
 fn par_generate(at_once: usize, amount: usize) -> Vec<Natural> {
     let mut vec = Vec::with_capacity(amount);
     let mut gen = Mutex::new(Vec::with_capacity(amount));
@@ -53,11 +63,11 @@ fn par_generate(at_once: usize, amount: usize) -> Vec<Natural> {
                 if (&num - Natural::from(3u8)).rem(Natural::from(4u8)) != 0 {
                     continue;
                 }
-                {
-                    if gen.lock().unwrap().len() >= amount {
-                        break;
-                    }
-                }
+                // {
+                //     if gen.lock().unwrap().len() >= amount {
+                //         break;
+                //     }
+                // }
                 // let mn = num.bits().count();
                 // if mn < 2048 {
                 //     continue;
